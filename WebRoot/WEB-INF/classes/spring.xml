@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:task="http://www.springframework.org/schema/task" 
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+        http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+
+    <!-- 自动扫描的包名  -->
+    <context:component-scan base-package="com"/>
+    <!-- 使用SpringMVC 3 的注解映射支持 -->
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+	    <!-- 用于将@ResponseBody注解的JAVA对象返回类转为对应的HTTP输出 -->
+	    <property name="messageConverters">
+            <list>
+            	<bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+            		<property name="supportedMediaTypes">
+				        <list>  
+					      	<value>text/plain;charset=UTF-8</value>  
+					    </list>  
+            		</property>
+            	</bean>
+                <bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter" />               
+                <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                    <property name="supportedMediaTypes">
+                        <list>
+                        	<value>text/plain;charset=UTF-8</value>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="org.springframework.http.converter.xml.SourceHttpMessageConverter" />
+                <bean class="org.springframework.http.converter.xml.XmlAwareFormHttpMessageConverter" />
+            </list>
+        </property>
+    </bean>
+    <!-- JSON视图解释类  -->
+    <bean id="mappingJacksonJsonView" class="org.springframework.web.servlet.view.json.MappingJacksonJsonView" />
+    <!-- JSP视图解释类  -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">  
+        <property name="prefix" value="/WEB-INF/view/"/>  
+        <property name="suffix" value=".jsp"/>  
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />  
+    </bean>
+    
+	<!-- 读数据库连接配置文件db.properties，如果需要配置多个则应使用locations属性，多个值用逗分隔 -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="location" value="classpath:db.properties"/>
+    </bean>
+    
+   	<!-- 数据源，使用C3P0数据源 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <!-- 指定连接数据库的驱动 -->
+        <property name="driverClass" value="${driver}"/>
+        <!-- 指定连接数据库的URL -->
+        <property name="jdbcUrl" value="${url}"/>
+        <!-- 指定连接数据库的用户名 -->
+        <property name="user" value="${user}"/>
+        <!-- 指定连接数据库的密码 -->
+        <property name="password" value="${password}"/>
+        <!-- 指定连接数据库连接池的最大连接数 -->
+        <property name="maxPoolSize" value="200"/>
+        <!-- 指定连接数据库连接池的最小连接数(生产使用时可改大些) -->
+        <property name="minPoolSize" value="50"/>
+        <!-- 指定连接数据库连接池的初始化连接数(生产使用时可改大些) -->
+        <property name="initialPoolSize" value="20"/>
+        <!-- 指定连接数据库连接池的连接的最大空闲时间 -->
+        <property name="maxIdleTime" value="20"/>
+    </bean>
+
+	<!-- MyBatis配置：数据源、Mapper XML、事务管理器  -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:mybatis.xml" />
+		<property name="mapperLocations">
+            <list>
+            	<value>classpath:com/shuixi/entity/**/*-resultmap.xml</value>
+            	<value>classpath:com/shuixi/entity/**/*-mapper.xml</value>
+            </list>
+		</property>
+		
+		<property name="transactionFactory">
+	    	<bean class="org.apache.ibatis.transaction.managed.ManagedTransactionFactory" />
+		</property> 
+	</bean>
+	
+	<!-- 其它地方可能需要直接用到的sqlSession -->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+		<constructor-arg index="1" value="BATCH" />
+	</bean>
+    
+     <!-- 通过扫描的模式，扫描目录在cn/hicard/vipcard/dao目录下，所有的dao都继承BaseDao接口的接口， 这样一个bean就可以了 -->
+  <!--  <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="cn.hicard.vipcard.dao"/>
+        <property name="markerInterface" value="cn.hicard.vipcard.dao.BaseDao"/>
+    </bean>
+     定时任务 
+    <bean id="updateLossTask" class="cn.hicard.vipcard.task.UpdateLossTask"/>
+    <bean id="cleanErrorCountTask" class="cn.hicard.vipcard.task.CleanErrorCountTask"></bean>
+    <task:scheduled-tasks>
+    	<task:scheduled ref="updateLossTask" method="updateCardStatus" cron="0 0 0 * * ?"/>
+    	 每小时执行一次 
+    	<task:scheduled ref="cleanErrorCountTask" method="hourClean" cron="0 0/60 * * * ?"/>
+    	 每天24点 
+    	<task:scheduled ref="cleanErrorCountTask" method="dayClean" cron="0 59 23 * * ?"/>
+    </task:scheduled-tasks>
+    
+    
+	--><!-- 异步线程池 -->  
+	<!--<bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">  
+		 核心线程数    
+		<property name="corePoolSize" value="10" />  
+		 最大线程数   
+		<property name="maxPoolSize" value="100" />  
+		 队列最大长度 >=mainExecutor.maxSize   
+		<property name="queueCapacity" value="1000" />  
+		 线程池维护线程所允许的空闲时间   
+		<property name="keepAliveSeconds" value="300" />  
+		 线程池对拒绝任务(无线程可用)的处理策略   
+		<property name="rejectedExecutionHandler">  
+			<bean class="java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy" />  
+		</property>  
+	</bean>  
+  
+	<bean id="hCExecutor" class="cn.hicard.util.HCExecutor">  
+		<property name="taskExecutor" ref="taskExecutor" />   
+	</bean> 
+--></beans>

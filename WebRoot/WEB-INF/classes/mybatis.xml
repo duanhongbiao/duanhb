@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-config.dtd">  
+<configuration>  
+    <settings>  
+    	<!-- 配置数据库字段映射成实体字段规则, 数据字段是带下划线而实体是驼峰方式,配置此属性可转成驼峰方式 -->
+        <setting name="mapUnderscoreToCamelCase" value="true" />  
+    </settings>  
+    
+    <typeAliases>
+    	
+    	
+    </typeAliases>
+</configuration>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="shuiXi"
+  id="myeclipse.1443580253208"
+  context-root="/shuiXi"
+  j2ee-spec="1.4"
+  archive="shuiXi.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+
