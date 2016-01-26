@@ -1,4 +1,4 @@
-/* CSS Document */
+﻿/* CSS Document */
 a{text-decoration:none;}
 .default_font{font-family:"微软雅黑" !important;}
 .body{padding:0px;}
@@ -64,5 +64,5 @@ a{text-decoration:none;}
 .info_ul{list-style-type:none;}
 }
 h1{
-	margin-top: 0px;
+	margin-top: 1px;
 	}
